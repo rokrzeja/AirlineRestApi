@@ -8,9 +8,10 @@ namespace project.Models
     public class Reservation
     {
         public int reservationId { get; set; }
+        public int numberOfPassengers { get; set; }
         public string flightClass { get; set; }
         public bool extraLuggage { get; set; }
-        public DateTime dateOfPurchase { get; set; }
+        public DateTime? dateOfPurchase { get; set; }
 
         public int flightInstanceId { get; set; }
         public FlightInstance flightInstance { get; set; }

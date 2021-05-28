@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using project.Models;
+using project.Service;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -13,17 +14,56 @@ namespace project.Controllers
     [ApiController]
     public class AirplaneController : ControllerBase
     {
-        private MainDbContext _context;
+        private IAirplaneService _service;
 
-        public AirplaneController(MainDbContext context)
+        public AirplaneController(IAirplaneService service)
         {
-            _context = context;
+            _service = service;
         }
 
         [HttpGet]
         public async Task<IActionResult> GetAirplanes()
         {
-            return Ok(_context.Airplanes);
+            return Ok( await _service.GetAirplanes());
+        }
+
+        [HttpGet("Capacity")]
+        public async Task<IActionResult> GetAirplanesOrderedByCapacity()
+        {
+            return Ok(await _service.GetAirplanesOrderedByCapacity());
+        }
+
+        [HttpGet("Economy/{capacity}")]
+        public async Task<IActionResult> GetAirplanesByEconomyClassCapacity(int capacity)
+        {
+            if (capacity < 1)
+            {
+                return BadRequest("Capacity has to be more than 0");
+            }
+
+            return Ok(await _service.GetAirplanesByEconomyClassCapacity(capacity));
+        }
+
+        [HttpGet("Business/{capacity}")]
+        public async Task<IActionResult> GetAirplanesByBusinessClassCapacity(int capacity)
+        {
+            if (capacity < 1)
+            {
+                return BadRequest("Capacity has to be more than 0");
+            }
+
+            return Ok(await _service.GetAirplanesByBusinessClassCapacity(capacity));
+        }
+
+        [HttpGet("First/{capacity}")]
+        public async Task<IActionResult> GetAirplanesByFirstClassCapacity(int capacity)
+        {
+            if (capacity < 1)
+            {
+                return BadRequest("Capacity has to be more than 0");
+            }
+
+            return Ok(await _service.GetAirplanesByFirstClassCapacity(capacity));
         }
 
         [HttpPost]
@@ -31,8 +71,7 @@ namespace project.Controllers
         {
             try
             {
-                _context.Airplanes.Add(airplane);
-                await _context.SaveChangesAsync();
+                await _service.AddAirplane(airplane);
             }
             catch (Exception exc)
             {
@@ -41,103 +80,42 @@ namespace project.Controllers
             return Ok(airplane.airplaneId);
         }
 
-        [HttpGet("Manufacturer")]
-        public async Task<IActionResult> GetAirplanesOrderedByCapacity()
-        {
-            var airplanes = from t in _context.Airplanes
-                            orderby t.economyClassCapacity + t.firstClassCapacity + t.businessClassCapacity descending
-                            select t;
-
-
-            return Ok(airplanes);
-        }
-
-        [HttpGet("Economy")]
-        public async Task<IActionResult> GetAirplanesByEconomyClassCapacity([FromQuery] int capacity)
-        {
-            if (capacity < 1)
-            {
-                return BadRequest("Capacity has to be more than 0");
-            }
-
-            var airplanes = await _context.Airplanes
-                                .Where(a => a.economyClassCapacity >= capacity)
-                                .OrderBy(a => a.economyClassCapacity).ToListAsync();
-
-            return Ok(airplanes);
-        }
-
-        [HttpGet("Business")]
-        public async Task<IActionResult> GetAirplanesByBusinessClassCapacity([FromQuery] int capacity)
-        {
-            if (capacity < 1)
-            {
-                return BadRequest("Capacity has to be more than 0");
-            }
-
-            var airplanes = await _context.Airplanes
-                                .Where(a => a.businessClassCapacity >= capacity)
-                                .OrderBy(a => a.businessClassCapacity).ToListAsync();
-
-            return Ok(airplanes);
-        }
-
-        [HttpGet("First")]
-        public async Task<IActionResult> GetAirplanesByFirstClassCapacity([FromQuery] int capacity)
-        {
-            if (capacity < 1)
-            {
-                return BadRequest("Capacity has to be more than 0");
-            }
-
-            var airplanes = await _context.Airplanes
-                                .Where(a => a.firstClassCapacity >= capacity)
-                                .OrderBy(a => a.firstClassCapacity).ToListAsync();
-
-            return Ok(airplanes);
-        }
-
         [HttpPut("{index}")]
         public async Task<IActionResult> changeAirplaneData(int index, Airplane airplane)
         {
-
-            var tempAirplane = new Airplane
+            if(!await _service.IsAirplaneExist(index))
             {
-                airplaneId = index,
-                code = airplane.code,
-                shortcut = airplane.shortcut,
-                fullName = airplane.fullName,
-                economyClassCapacity = airplane.economyClassCapacity,
-                businessClassCapacity = airplane.businessClassCapacity,
-                firstClassCapacity = airplane.firstClassCapacity,
-                range = airplane.range,
-                productionYear = airplane.productionYear,
-                manufacturer = airplane.manufacturer,
-                hoursFlown = airplane.hoursFlown
-            };
+                return BadRequest("Airplane does not exist");
+            }
 
-            _context.Airplanes.Attach(tempAirplane);
-            _context.Entry(tempAirplane).State = EntityState.Modified;
+            if(!await _service.IsPossibleToDeleteOrUpdate(index))
+            {
+                return BadRequest("Impossible to change data of Airplane that has booked flights");
+            }
 
-            await _context.SaveChangesAsync();
-
-            return Ok(index);
+            await _service.changeAirplaneData(index,airplane);
+            return Ok("Airplane data has changed");
         }
 
         [HttpDelete("{index}")]
         public async Task<IActionResult> DeleteAirplane(int index)
         {
-            var airplane = new Airplane
+            if (!await _service.IsAirplaneExist(index))
             {
-                airplaneId = index
-            };
+                return BadRequest("Airplane does not exist");
+            }
 
-            _context.Airplanes.Attach(airplane);
-            _context.Entry(airplane).State = EntityState.Deleted;
+            if (!await _service.IsPossibleToDeleteOrUpdate(index))
+            {
+                return BadRequest("Impossible to delete the Airplane that has booked flights");
+            }
 
-            await _context.SaveChangesAsync();
-
-            return Ok(index);
+            await _service.DeleteAirplane(index);
+            return Ok("Airplane has deleted");
         }
+
+
+
+
     }
 }

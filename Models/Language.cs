@@ -10,7 +10,6 @@ namespace project.Models
     {
         public int languageId { get; set; }
         public string language { get; set; }
-
         public ICollection<StewardLanguageAssociation> stewardLanguageList { get; set; }
     }
 }

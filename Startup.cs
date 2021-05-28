@@ -9,6 +9,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi.Models;
 using project.Models;
+using project.Service;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -31,8 +32,16 @@ namespace project
             services.AddDbContext<MainDbContext>(opt =>
             {
                 opt.LogTo(Console.WriteLine)
-                    .UseSqlServer("Connection_String ;)");
+                    .UseSqlServer("Connection String ;)");
             });
+
+            services.AddScoped<IAirplaneService, AirplaneService>();
+            services.AddScoped<IDepartureService, DepartureService>();
+            services.AddScoped<IArrivalService, ArrivalService>();
+            services.AddScoped<IFlightService, FlightService>();
+            services.AddScoped<IFlightInstanceService, FlightInstanceService>();
+            services.AddScoped<IReservationService, ReservationService>();
+
             services.AddControllers();
             services.AddSwaggerGen(c =>
             {

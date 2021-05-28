@@ -31,7 +31,7 @@ namespace project.Models
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
             base.OnConfiguring(optionsBuilder);
-            optionsBuilder.UseSqlServer("Connection_String ;)");
+            optionsBuilder.UseSqlServer("Connection String ;)");
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
